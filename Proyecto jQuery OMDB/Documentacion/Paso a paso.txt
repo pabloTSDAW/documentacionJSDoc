@@ -1,0 +1,17 @@
+He usado JDoc siguiendo este tutorial:
+
+http://usejsdoc.org/about-getting-started.html#getting-started
+
+- Comentamos cada clase y función con /** */.
+
+- En el folder del proyecto, instalamos jsdoc con node:
+
+npm install -g jsdoc
+
+- Ejecutamos el comando jsdoc sobre el código js comentado:
+
+jsdoc index.js
+
+- Ésto nos crea una carpeta "out" donde encontraremos el html de la documentación de nuestro proyecto 
+(he copiado el contenido de la carpeta out dentro de la carpeta documentacion, en la raíz del proyecto).
+

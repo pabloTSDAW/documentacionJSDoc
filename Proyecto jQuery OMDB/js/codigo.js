@@ -1,0 +1,220 @@
+// OMDb API: http://www.omdbapi.com/?i=tt3896198&apikey=cc5a0e2a   ID
+// OMDB API: http://www.omdbapi.com/?t=saw&apikey=cc5a0e2a  TITLE
+// KEY cc5a0e2a
+
+//MODELO--------------------------------------------------------------------
+
+/**
+ * Represents a film.
+ * @constructor
+ * @param {number} id - The id of the film.
+ */
+class Pelicula {
+  constructor(id) {
+    this.id = id;
+  }
+}
+
+/**
+ * Represents a list of film.
+ * @constructor
+ * @param {array} almacen - The array of films.
+ */
+class Filmoteca {
+  constructor() {
+    this.almacen = [];
+  }
+  /** Save a film in the almacen. */
+  guardar(objeto) {
+    this.almacen.push(objeto);
+  }
+}
+
+//VISTA---------------------------------------------------------------------
+
+/**
+ * Visual model of the films.
+ * @constructor
+ */
+class VistaPelicula {
+
+  /** Empty the container where the films are shown */
+  limpiar(){
+    $('#peliculas').empty();
+  }
+
+  /** Model all the films in the list */
+  verPeliculas(peliculas) {
+    for (var i = 0; i < peliculas.length; i++) {
+      if (peliculas[i].Poster == "N/A" || !(peliculas[i].Poster)) {
+        peliculas[i].Poster = "images/nodisponible.jpg";
+      }
+      $('#peliculas').append('<div class="pelicula"><img id="' + peliculas[i].imdbID + '" src="' + peliculas[i].Poster + '" onclick="c.seleccionar(this)"><h2>' + peliculas[i].Title + '</h2><p>' + peliculas[i].Year + '</p></div>');
+    }
+  }
+
+  /** Model a film filtering by parameter (id) */
+  elegirPelicula(pelicula) {
+    if (pelicula.Poster == "N/A" || !(pelicula.Poster)) {
+        pelicula.Poster = "images/nodisponible.jpg";
+      }
+    $('#peliculas').empty();
+    $('#peliculas').append('<div class="peliculaSeleccionada"><div class="portada" onclick="flotante(1)"><img id="' + pelicula.imdbID + '" src="' + (pelicula.Poster ? pelicula.Poster : 'images/nodisponible.jpg') + '"></div><div class="contenido"><h2>' + pelicula.Title + '</h2><p><span>Year: </span> ' + pelicula.Year + '</p></div></div>');
+    $('.contenido').append('<p><span>Genre: </span> ' + pelicula.Genre + '</p><p><span>Director: </span> ' + pelicula.Director + '</p><p><span>Actors: </span> ' + pelicula.Actors + '</p><p><span>Plot: </span> ' + pelicula.Plot + '</p><p><span>Website: </span><a href="' + pelicula.Website + '">' + pelicula.Website + '</a></p>');
+    $('#flotante').empty();
+    $('#flotante').append('<img src="' + (pelicula.Poster ? pelicula.Poster : 'images/nodisponible.jpg') + '" width="100px height="200px">')
+    $('#flotante').append('<h3><a onClick="flotante(2)">Cerrar ventana</a></h3>');
+  }
+
+}
+
+//CONTROLADOR---------------------------------------------------------------
+
+/**
+ * Represents the application driver.
+ * @constructor
+ * @param {object} filmoteca - Instance an element of the class Filmoteca.
+ * @param {object} vista - Instance an element of the class vistaPelicula.
+ */
+class Controlador {
+  constructor() {
+    this.filmoteca = new Filmoteca();
+    this.vista = new VistaPelicula();
+  }
+
+  /** Make an AJAX request to the OMDB API */
+  peticion(tipo, num) {
+    var self = this;
+    self.filmoteca.almacen = [];
+    var busqueda = $('#busqueda').val();
+    $(document).ready(function() {
+        $.ajax({
+  				url: "http://www.omdbapi.com/?s=" + busqueda + "&apikey=9874a93c&type=" + tipo + "&page=" + num,
+  				success: function(resp) {
+            console.log(resp);
+            for (var i = 0; i < resp['Search'].length; i++) {
+              var pelicula = resp['Search'][i];
+              self.filmoteca.guardar(pelicula);
+            }
+            self.vista.verPeliculas(self.filmoteca.almacen);
+            comprobar = true;
+  				}
+  			});
+  		});
+  	}
+
+    /** Empty the movie search input */
+    limpiar(pagina) {
+      var valor = $('#busqueda').val();
+      var tipo = $('.filtro').val();
+      if (texto != valor || texto2 != tipo) {
+        $('#peliculas').empty();
+        this.peticion(tipo, pagina);
+        texto = valor;
+        texto2 = tipo;
+      } else {
+        this.peticion(tipo, pagina);
+      }
+    }
+
+    /** Select a film */
+    seleccionar(objeto) {
+      this.peticion2(objeto.id);
+      moveUp();
+    }
+
+    /** Make an AJAX request to the OMDB API with the paramter plot to see a full description of the argument */
+    peticion2(id) {
+      var self = this;
+      $(document).ready(function() {
+          $.ajax({
+    				url: "http://www.omdbapi.com/?i=" + id + "&apikey=9874a93c&plot=full",
+    				success: function(resp) {
+              var pelicula = resp;
+              console.log(pelicula);
+              self.vista.elegirPelicula(pelicula);
+              self.vista.verPeliculas(self.filmoteca.almacen);
+    				}
+    			});
+    	});
+    }
+
+}
+
+
+//MAIN--------------------------------------------------------------------------
+
+var c = new Controlador();
+var comprobar = false;
+var cont = 2;
+var texto;
+var texto2;
+
+//SCROLL INFINITO
+$(document).ready(function() {
+	var win = $(window);
+
+	// Each time the user scrolls
+	win.scroll(function() {
+		// End of the document reached?
+		if (($(document).height() - win.height() <= (win.scrollTop()) + 20) && ($(document).height() - win.height() >= (win.scrollTop()) - 20)) {
+      if (comprobar == true){
+        c.peticion(texto2, cont);
+        cont++;
+        comprobar = false;
+      }
+    }
+  });
+});
+
+/** Move the pointer to the top of the page */
+function moveUp(){
+    $("html, body").animate({ scrollTop: 0 }, 600);
+    return false;
+}
+
+//BOTÓN VOLVER INICIO SCROLL
+$(document).ready(function(){
+    $(window).scroll(function(){
+        if ($(this).scrollTop() > 100) {
+            $('#scroll').fadeIn();
+        } else {
+            $('#scroll').fadeOut();
+        }
+    });
+    $('#scroll').click(function(){
+        $("html, body").animate({ scrollTop: 0 }, 600);
+        return false;
+    });
+});
+
+//DETECTAR CARGA - ANIMACIÓN
+$(window).load(function() {
+    $("#carga").fadeOut("slow");
+});
+
+//VENTANA FLOTANTE
+
+/** Open a floating window to see the image at full size */
+function flotante(tipo){
+
+	if (tipo==1){
+	//Si hacemos clic en abrir mostramos el fondo negro y el flotante
+	$('#contenedor').show();
+    $('#flotante').animate({
+      marginTop: "-152px"
+    });
+	}
+	if (tipo==2){
+	//Si hacemos clic en cerrar, deslizamos el flotante hacia arriba
+    $('#flotante').animate({
+      marginTop: "-756px"
+    });
+	//Una vez ocultado el flotante cerramos el fondo negro
+	setTimeout(function(){
+	$('#contenedor').hide();
+
+	},500)
+	}
+
+}

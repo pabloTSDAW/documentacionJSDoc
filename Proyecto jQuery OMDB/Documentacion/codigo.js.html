@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: codigo.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: codigo.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// OMDb API: http://www.omdbapi.com/?i=tt3896198&amp;apikey=cc5a0e2a   ID
+// OMDB API: http://www.omdbapi.com/?t=saw&amp;apikey=cc5a0e2a  TITLE
+// KEY cc5a0e2a
+
+//MODELO--------------------------------------------------------------------
+
+/**
+ * Represents a film.
+ * @constructor
+ * @param {number} id - The id of the film.
+ */
+class Pelicula {
+  constructor(id) {
+    this.id = id;
+  }
+}
+
+/**
+ * Represents a list of film.
+ * @constructor
+ * @param {array} almacen - The array of films.
+ */
+class Filmoteca {
+  constructor() {
+    this.almacen = [];
+  }
+  /** Save a film in the almacen. */
+  guardar(objeto) {
+    this.almacen.push(objeto);
+  }
+}
+
+//VISTA---------------------------------------------------------------------
+
+/**
+ * Visual model of the films.
+ * @constructor
+ */
+class VistaPelicula {
+
+  /** Empty the container where the films are shown */
+  limpiar(){
+    $('#peliculas').empty();
+  }
+
+  /** Model all the films in the list */
+  verPeliculas(peliculas) {
+    for (var i = 0; i &lt; peliculas.length; i++) {
+      if (peliculas[i].Poster == "N/A" || !(peliculas[i].Poster)) {
+        peliculas[i].Poster = "images/nodisponible.jpg";
+      }
+      $('#peliculas').append('&lt;div class="pelicula">&lt;img id="' + peliculas[i].imdbID + '" src="' + peliculas[i].Poster + '" onclick="c.seleccionar(this)">&lt;h2>' + peliculas[i].Title + '&lt;/h2>&lt;p>' + peliculas[i].Year + '&lt;/p>&lt;/div>');
+    }
+  }
+
+  /** Model a film filtering by parameter (id) */
+  elegirPelicula(pelicula) {
+    if (pelicula.Poster == "N/A" || !(pelicula.Poster)) {
+        pelicula.Poster = "images/nodisponible.jpg";
+      }
+    $('#peliculas').empty();
+    $('#peliculas').append('&lt;div class="peliculaSeleccionada">&lt;div class="portada" onclick="flotante(1)">&lt;img id="' + pelicula.imdbID + '" src="' + (pelicula.Poster ? pelicula.Poster : 'images/nodisponible.jpg') + '">&lt;/div>&lt;div class="contenido">&lt;h2>' + pelicula.Title + '&lt;/h2>&lt;p>&lt;span>Year: &lt;/span> ' + pelicula.Year + '&lt;/p>&lt;/div>&lt;/div>');
+    $('.contenido').append('&lt;p>&lt;span>Genre: &lt;/span> ' + pelicula.Genre + '&lt;/p>&lt;p>&lt;span>Director: &lt;/span> ' + pelicula.Director + '&lt;/p>&lt;p>&lt;span>Actors: &lt;/span> ' + pelicula.Actors + '&lt;/p>&lt;p>&lt;span>Plot: &lt;/span> ' + pelicula.Plot + '&lt;/p>&lt;p>&lt;span>Website: &lt;/span>&lt;a href="' + pelicula.Website + '">' + pelicula.Website + '&lt;/a>&lt;/p>');
+    $('#flotante').empty();
+    $('#flotante').append('&lt;img src="' + (pelicula.Poster ? pelicula.Poster : 'images/nodisponible.jpg') + '" width="100px height="200px">')
+    $('#flotante').append('&lt;h3>&lt;a onClick="flotante(2)">Cerrar ventana&lt;/a>&lt;/h3>');
+  }
+
+}
+
+//CONTROLADOR---------------------------------------------------------------
+
+/**
+ * Represents the application driver.
+ * @constructor
+ * @param {object} filmoteca - Instance an element of the class Filmoteca.
+ * @param {object} vista - Instance an element of the class vistaPelicula.
+ */
+class Controlador {
+  constructor() {
+    this.filmoteca = new Filmoteca();
+    this.vista = new VistaPelicula();
+  }
+
+  /** Make an AJAX request to the OMDB API */
+  peticion(tipo, num) {
+    var self = this;
+    self.filmoteca.almacen = [];
+    var busqueda = $('#busqueda').val();
+    $(document).ready(function() {
+        $.ajax({
+  				url: "http://www.omdbapi.com/?s=" + busqueda + "&amp;apikey=9874a93c&amp;type=" + tipo + "&amp;page=" + num,
+  				success: function(resp) {
+            console.log(resp);
+            for (var i = 0; i &lt; resp['Search'].length; i++) {
+              var pelicula = resp['Search'][i];
+              self.filmoteca.guardar(pelicula);
+            }
+            self.vista.verPeliculas(self.filmoteca.almacen);
+            comprobar = true;
+  				}
+  			});
+  		});
+  	}
+
+    /** Empty the movie search input */
+    limpiar(pagina) {
+      var valor = $('#busqueda').val();
+      var tipo = $('.filtro').val();
+      if (texto != valor || texto2 != tipo) {
+        $('#peliculas').empty();
+        this.peticion(tipo, pagina);
+        texto = valor;
+        texto2 = tipo;
+      } else {
+        this.peticion(tipo, pagina);
+      }
+    }
+
+    /** Select a film */
+    seleccionar(objeto) {
+      this.peticion2(objeto.id);
+      moveUp();
+    }
+
+    /** Make an AJAX request to the OMDB API with the paramter plot to see a full description of the argument */
+    peticion2(id) {
+      var self = this;
+      $(document).ready(function() {
+          $.ajax({
+    				url: "http://www.omdbapi.com/?i=" + id + "&amp;apikey=9874a93c&amp;plot=full",
+    				success: function(resp) {
+              var pelicula = resp;
+              console.log(pelicula);
+              self.vista.elegirPelicula(pelicula);
+              self.vista.verPeliculas(self.filmoteca.almacen);
+    				}
+    			});
+    	});
+    }
+
+}
+
+
+//MAIN--------------------------------------------------------------------------
+
+var c = new Controlador();
+var comprobar = false;
+var cont = 2;
+var texto;
+var texto2;
+
+//SCROLL INFINITO
+$(document).ready(function() {
+	var win = $(window);
+
+	// Each time the user scrolls
+	win.scroll(function() {
+		// End of the document reached?
+		if (($(document).height() - win.height() &lt;= (win.scrollTop()) + 20) &amp;&amp; ($(document).height() - win.height() >= (win.scrollTop()) - 20)) {
+      if (comprobar == true){
+        c.peticion(texto2, cont);
+        cont++;
+        comprobar = false;
+      }
+    }
+  });
+});
+
+/** Move the pointer to the top of the page */
+function moveUp(){
+    $("html, body").animate({ scrollTop: 0 }, 600);
+    return false;
+}
+
+//BOTÓN VOLVER INICIO SCROLL
+$(document).ready(function(){
+    $(window).scroll(function(){
+        if ($(this).scrollTop() > 100) {
+            $('#scroll').fadeIn();
+        } else {
+            $('#scroll').fadeOut();
+        }
+    });
+    $('#scroll').click(function(){
+        $("html, body").animate({ scrollTop: 0 }, 600);
+        return false;
+    });
+});
+
+//DETECTAR CARGA - ANIMACIÓN
+$(window).load(function() {
+    $("#carga").fadeOut("slow");
+});
+
+//VENTANA FLOTANTE
+
+/** Open a floating window to see the image at full size */
+function flotante(tipo){
+
+	if (tipo==1){
+	//Si hacemos clic en abrir mostramos el fondo negro y el flotante
+	$('#contenedor').show();
+    $('#flotante').animate({
+      marginTop: "-152px"
+    });
+	}
+	if (tipo==2){
+	//Si hacemos clic en cerrar, deslizamos el flotante hacia arriba
+    $('#flotante').animate({
+      marginTop: "-756px"
+    });
+	//Una vez ocultado el flotante cerramos el fondo negro
+	setTimeout(function(){
+	$('#contenedor').hide();
+
+	},500)
+	}
+
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Controlador.html">Controlador</a></li><li><a href="Filmoteca.html">Filmoteca</a></li><li><a href="Pelicula.html">Pelicula</a></li><li><a href="VistaPelicula.html">VistaPelicula</a></li></ul><h3>Global</h3><ul><li><a href="global.html#flotante">flotante</a></li><li><a href="global.html#moveUp">moveUp</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Feb 24 2018 17:26:29 GMT+0100 (Hora estándar romance)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
